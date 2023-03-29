@@ -5,7 +5,7 @@ try:
     import serial, serial.tools.list_ports
 except ImportError:
     print("Dependency not found: please run 'pip3 install pyserial'")
-    exit(1)
+    sys.exit(1)
 
 ce_id = (0x0451, 0xe008)
 max_packet_size = 4096
@@ -130,7 +130,7 @@ if "mode" in config:
 		pipe_mode = False
 	else:
 		print("Invalid mode: " + config["mode"])
-		exit(1)
+		sys.exit(1)
 serial_mode = not pipe_mode
 
 debug_mode = False
@@ -154,7 +154,7 @@ if serial_mode:
 			print(f"{ct} device not listed")
 			sel=input("Select Device: ")
 			if int(sel)==len(ports_manual):
-				exit(1)
+				sys.exit(1)
 			else:
 				serial_name=ports_manual[int(sel)].device
 		else: serial_name = ports[0].device
