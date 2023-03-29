@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import socket, json, threading, sys
+import socket, json, threading, sys, time
 try:
     import serial, serial.tools.list_ports
 except ImportError:
@@ -60,6 +60,9 @@ def ser_recv(ser_in, ser_out):
 	global s, connected, use_ssl
 	print("Serial listening.")
 	try:
+		time.sleep(1)
+		ser_out.write("bridgeConnected".encode())
+		print("Sent bridgeConnected!")
 		while True:
 			size = int.from_bytes(ser_in.read(3), 'little')
 			if size > max_packet_size:
@@ -67,41 +70,9 @@ def ser_recv(ser_in, ser_out):
 				# todo: we should stop something, as this will 100% cause a desync
 			else:
 				data = ser_in.read(size)
-				if len(data) > 0:
-					packet_type = data[0]
-					if debug_mode: print("C->S: Type {:>3}, size {}".format(packet_type, size))
-					if packet_type == 0:
-						# Connect
-						hostinfo = str(data[1:-1], 'utf-8').split(":", maxsplit=2)
-						if debug_mode: print("Got connect packet")
-						server=hostinfo[0]
-						custom_port=tcp_port
-						if len(hostinfo)>1:
-							custom_port=int(hostinfo[1])
-						connect(server, custom_port)
-						if connected:
-							ser_out.write(b'\x01\x00\x00\x00')
-							if debug_mode: print("B->C: Type   0, size 1")
-						else:
-							ser_out.write(b'\x01\x00\x00\xF0')
-							if debug_mode: print("B->C: Type 253, size 1")
-					elif packet_type == 1:
-						# Disconnect
-						if debug_mode: print("Got disconnect packet")
-						connected = False
-						try:
-							s.close()
-						except: pass
-						ser_out.write(b'\x01\x00\x00\x01')
-						if debug_mode: print("B->C: Type   1, size 1")
-						return
-					else:
-						# Not for us
-						if connected:
-							status = s.send(bytes(u24(size)) + data)
-							if debug_mode: print("C->S completed: ", status)
-						else:
-							sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
+				print(data[0])
+				print(data[1])
+
 	except (serial.SerialException, OSError, IOError): 
 		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host\n')
 		connected = False
@@ -120,6 +91,7 @@ prefer_ssl = False
 
 pipe_mode = False
 if "mode" in config:
+	print(f'Mode: {config["mode"]}')
 	if config["mode"] == "pipe":
 		pipe_mode = True
 	elif config["mode"] == "CEmu":
@@ -161,21 +133,13 @@ if serial_mode:
 
 		if len(ports) > 1:
 			print("Multiple devices detected - using {}".format(serial_name))
-
+	
+	print('Opening serial..')
 	ser = serial.Serial(serial_name, timeout=None)
+	if ser:
+		print('Opened serial!')
 	ser_in = ser
 	ser_out = ser
-
-if pipe_mode:
-	oname = config["pipe_out"]
-	iname = config["pipe_in"]
-	if debug_mode:
-		print("Out pipe: " + oname)
-		print("In pipe: " + iname)
-	ser_out = open(oname, "wb", buffering=0)
-	ser_in = open(iname, "rb")
-	if debug_mode:
-		print("Pipes opened")
 
 print("^C to exit.")
 
@@ -194,4 +158,3 @@ if pipe_mode:
 try: 
 	s.close()
 except: pass
-	
