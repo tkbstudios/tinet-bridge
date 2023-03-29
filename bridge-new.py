@@ -37,7 +37,7 @@ while True:
             print(data)
 
     except (serial.SerialException, OSError, IOError): 
-        print('Serial device appears disabled. Disconnecting from remote host\n')
+        print('Serial device appears disabled. Disconnecting from remote host')
         connected = False
         try:
             sock.close()
