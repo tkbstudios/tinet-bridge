@@ -64,17 +64,19 @@ def ser_recv(ser_in, ser_out):
 		ser_out.write("bridgeConnected\0".encode())
 		print("Sent bridgeConnected!")
 		while True:
-			size = int.from_bytes(ser_in.read(3), 'big')
-			print(size)
+			size = int.from_bytes(ser_in.read(3), 'little')
 			if size > max_packet_size:
 				sys.stderr.write('Error: Got {} bytes from client, but the max packet size is {}\n'.format(size, max_packet_size))
 				# todo: we should stop something, as this will 100% cause a desync
 			else:
+				print(f'Serial open: {str(ser_in.is_open)}')
+				print(f'{str(size)}\n')
+				print('Bytes aren\'t too long!\n')
 				data = ser_in.read(size)
 				if len(data) > 0:
-					sys.stderr.write(data)
+					print(data)
 				elif len(data) <= 0:
-					sys.stderr.write("Recieved data was empty\n")
+					print("Recieved data was empty\n")
 
 	except (serial.SerialException, OSError, IOError): 
 		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host\n')
