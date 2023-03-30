@@ -2,6 +2,15 @@ import serial
 import socket
 import sys
 import time
+import wget
+
+
+LATEST_VERSION_URL = ""
+CURRENT_VERSION = "0.0.1"
+
+def checkForUpdate():
+    print("Checking for updates...")
+    
 
 # Define the USB device port
 USB_PORT = input("Please enter COM port (COM1, COM2, etc..): ")
