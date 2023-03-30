@@ -30,7 +30,7 @@ while True:
         response = 'Invalid request'
 
     # Send the response back to the client
-    client_socket.sendall(response.encode())
+    client_socket.send(response.encode())
 
     # Close the client connection
     client_socket.close()
