@@ -1,5 +1,6 @@
 import socket
 import requests
+import json
 
 # Set up the server socket
 host = '127.0.0.1'
@@ -18,13 +19,15 @@ while True:
 
     # Receive data from the client
     data = client_socket.recv(1024).decode().strip()
-    print(data)
 
-    if data == 'Hello':
-        # Send the response "OK" if the received data is "Hello"
-        response = 'OK'
+    if data == "SERIAL_CONNECTED":
+        client_socket.send("OK".encode())
     elif data == 'SHUTDOWN':
         server_socket.close()
+    elif data == "currentTime":
+        time_response = requests.get("https://timeapi.io/api/Time/Current/zone?timeZone=Europe/Brussels")
+        time_data = json.loads(time_response.text)
+        response = f"currentTime:{time_data['time']}"
     else:
         # Send a different response if the received data is something else
         response = 'Invalid request'

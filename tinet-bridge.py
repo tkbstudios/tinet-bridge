@@ -15,6 +15,15 @@ DEBUG = True
 connected = False
 
 
+def CleanExit(ser, sock):
+    print("Notifying client bridge got disconnected!                      ", end="")
+    ser.write("bridgeDisconnected".encode())
+    ser.write("internetDisconnected".encode())
+    time.sleep(0.5)
+    print("\rNotified client bridge got disconnected!                      ", end="")
+    ser.close()
+    sock.close()
+
 print("\rIniting serial...", end="")
 
 ser = serial.Serial(USB_PORT, baudrate=9600, timeout=1)
@@ -36,7 +45,6 @@ time.sleep(0.5)
 
 ser.write("bridgeConnected\0".encode())
 print("\rClient got notified he was connected to the bridge!                      ", end="")
-time.sleep(0.5)
 
 print("\rReading data from serial device...                      ")
 try:
@@ -48,13 +56,17 @@ try:
             # Print the data if it isn't empty
             if data.decode() != "":
                 decoded_data = data.decode()
-                if DEBUG == True: print(f'Recieved encoded data: {data}')
-                print(f'Recieved decoded data: {decoded_data}')
+                if DEBUG == True: print(f'Recieved serial encoded data: {data}')
+                print(f'Recieved serial decoded data: {decoded_data}')
 
                 # Send and wait for response from socket
                 sock.send(decoded_data.encode())
                 response = sock.recv(1024)
                 decoded_response = response.decode()
+
+                if DEBUG == True: print(f'Recieved socket encoded data: {data}')
+                print(f'Recieved socket decoded data: {decoded_data}')
+                
                 # If the response is OK, send "internetConnected" to the serial device
                 if decoded_response == "OK":
                     ser.write("internetConnected\0".encode())
@@ -73,9 +85,4 @@ try:
 
 except KeyboardInterrupt:
     print("\nRecieved CTRL+C! Exiting cleanly...")
-    print("Notifying client bridge got disconnected!                      ", end="")
-    ser.write("bridgeDisconnected".encode())
-    time.sleep(0.5)
-    print("\rNotified client bridge got disconnected!                      ", end="")
-    ser.close()
-    sock.close()
+    CleanExit(ser, sock)
