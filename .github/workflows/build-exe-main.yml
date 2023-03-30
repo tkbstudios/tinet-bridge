@@ -1,4 +1,4 @@
-name: Build EXE file
+name: Build EXE file main
 
 on:
   push:
