@@ -21,7 +21,7 @@ while True:
     data = client_socket.recv(1024).decode().strip()
 
     if data == "SERIAL_CONNECTED":
-        client_socket.send("OK".encode())
+        response = "OK"
     elif data == 'SHUTDOWN':
         server_socket.close()
     elif data == "currentTime":
