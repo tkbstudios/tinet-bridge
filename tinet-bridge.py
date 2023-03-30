@@ -2,15 +2,33 @@ import serial
 import socket
 import sys
 import time
-import wget
+import urllib.request
 
 
-LATEST_VERSION_URL = ""
+LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
 CURRENT_VERSION = "0.0.1"
+
 
 def checkForUpdate():
     print("Checking for updates...")
-    
+    try:
+        with urllib.request.urlopen(LATEST_VERSION_URL) as response:
+            latest_version = response.read().decode().strip()
+    except urllib.error.URLError as e:
+        print("Error: ", e.reason)
+        sys.exit(1)
+
+    # Compare the versions
+    if latest_version != CURRENT_VERSION:
+        print("New version available! Please update!")
+        print("https://github.com/tkbstudios/ti84pluscenet-bridge/blob/main/tinet-bridge.py")
+        print("Shortened link: https://tinyurl.com/mr3rxx3v")
+        sys.exit(1)
+    else:
+        print("Current version is up to date")
+
+
+checkForUpdate()
 
 # Define the USB device port
 USB_PORT = input("Please enter COM port (COM1, COM2, etc..): ")
