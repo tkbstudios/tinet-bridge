@@ -1,2 +1,2 @@
 import os
-os.system('auto-py-to-exe --onefile --windowed --name tinet-bridge.exe')
+os.system('auto-py-to-exe --onefile --windowed --input=tinet-bridge.py --output=tinet-bridge.exe')
