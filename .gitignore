@@ -1,5 +1,6 @@
 # Other things to ignore
 .dccache
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
