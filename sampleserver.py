@@ -1,39 +1,65 @@
 import socket
 import requests
 import json
+import threading
+import sys
+
+
+#----BEGIN CONFIG----#
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 5556
+DEBUG = True
+#-----END CONFIG-----#
+
 
 # Set up the server socket
-host = '127.0.0.1'
-port = 5556
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((host, port))
+server_socket.bind((SERVER_HOST, SERVER_PORT))
 server_socket.listen(1)
 
-print(f'Server listening on {host}:{port}')
+print(f'Server listening on {SERVER_HOST}:{SERVER_PORT}')
 
+
+def client_handler(client_socket, address):
+    if DEBUG == True: print(f'Connected by {address}')
+    try:
+        sockresponse = ""
+        while True:
+            data = client_socket.recv(4096).decode().strip()
+        
+            if data != "":
+                if DEBUG == True: print(data)
+
+            if data == "SERIAL_CONNECTED":
+                sockresponse = "OK"
+
+            elif data == "server_ping":
+                sockresponse = "server_pong"
+
+            elif data == 'SHUTDOWN':
+                client_socket.close()
+                server_socket.close()
+                break
+
+            elif data == "currentTime":
+                time_response = requests.get("https://timeapi.io/api/Time/Current/zone?timeZone=Europe/Brussels")
+                time_data = json.loads(time_response.text)
+                sockresponse = f"currentTime:{str(time_data['time'])}"
+
+            elif data != "":
+                sockresponse = 'Invalid request'
+
+            client_socket.send(sockresponse.encode())
+    except socket.timeout or socket.error as e:
+        print(str(e))
 
 while True:
-    # Wait for a client connection
-    client_socket, address = server_socket.accept()
-    print(f'Connected by {address}')
-
-    # Receive data from the client
-    data = client_socket.recv(1024).decode().strip()
-
-    if data == "SERIAL_CONNECTED":
-        response = "OK"
-    elif data == 'SHUTDOWN':
+    try:
+        # Wait for a client connection
+        client_socket, address = server_socket.accept()
+        new_client_thread = threading.Thread(target=client_handler(client_socket=client_socket, address=address))
+        new_client_thread.name = str(address)
+        new_client_thread.daemon = True
+    except KeyboardInterrupt:
         server_socket.close()
-    elif data == "currentTime":
-        time_response = requests.get("https://timeapi.io/api/Time/Current/zone?timeZone=Europe/Brussels")
-        time_data = json.loads(time_response.text)
-        response = f"currentTime:{time_data['time']}"
-    else:
-        # Send a different response if the received data is something else
-        response = 'Invalid request'
-
-    # Send the response back to the client
-    client_socket.send(response.encode())
-
-    # Close the client connection
-    client_socket.close()
+        sys.exit(1)
