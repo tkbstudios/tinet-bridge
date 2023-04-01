@@ -1,5 +1,6 @@
 # TI-84 Plus CE Net Bridge
-This program makes the connection between your calculator and our main servers possible!
+This program makes the connection between your calculator and our main servers possible!  
+[![wakatime](https://wakatime.com/badge/github/tkbstudios/ti84pluscenet-bridge.svg)](https://wakatime.com/badge/github/tkbstudios/ti84pluscenet-bridge)
 
 ## How to use
 1. Clone this repository using `git clone https://github.com/tkbstudios/ti84pluscenet-bridge`
