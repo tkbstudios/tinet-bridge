@@ -25,13 +25,23 @@ def client_handler(client_socket, address):
     try:
         sockresponse = ""
         while True:
-            data = client_socket.recv(4096).decode().strip()
+            try:
+                data = client_socket.recv(1024).decode().strip()
+            except ConnectionAbortedError:
+                print(f'{address} disconnected!')
+                break
+            except ConnectionRefusedError:
+                print(f'Connection refused. address: {address}')
+                break
+            except ConnectionError:
+                print(f'Connection error. address: {address}')
+                break
         
             if data != "":
                 if DEBUG == True: print(data)
 
             if data == "SERIAL_CONNECTED":
-                sockresponse = "OK"
+                sockresponse = "SERIAL_CONNECTED_CONFIRMED_BY_SERVER"
 
             elif data == "server_ping":
                 sockresponse = "server_pong"

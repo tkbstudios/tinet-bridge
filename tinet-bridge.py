@@ -25,6 +25,14 @@ PREDEFINED_COM_PORT = "COM5" # Leave empty to choose which COM port to use at br
 
 #-END BRIDGE CONFIG-#
 
+
+packets_dictionary = {
+    0x00: "USERNAME:",
+    0x01: "USERTOKEN:"
+}
+
+
+
 def checkForUpdate():
     print("Checking for updates...")
     try:
@@ -34,7 +42,6 @@ def checkForUpdate():
         print("Error: ", str(e.reason))
         sys.exit(1)
 
-    # Compare the versions
     if latest_version != CURRENT_VERSION:
         print("New version available! Please update!")
         print("https://github.com/tkbstudios/ti84pluscenet-bridge/blob/main/tinet-bridge.py")
@@ -60,7 +67,6 @@ def CleanExit(serial_connection, server_client_sock, reason):
     print("Notifying client bridge got disconnected!                      ", end="")
     serial_connection.write("bridgeDisconnected".encode())
     serial_connection.write("internetDisconnected".encode())
-    time.sleep(0.5)
     print("\rNotified client bridge got disconnected!                      ", end="")
     serial_connection.close()
     server_client_sock.close()
@@ -93,21 +99,17 @@ def server_ping(server_client_sock, serial_connection):
 print("\rIniting serial...", end="")
 
 serial_connection = serial.Serial(USB_PORT, baudrate=9600, timeout=1)
-time.sleep(0.5)
 
 print("\rCreating TCP socket...                      ", end="")
 
 server_client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_client_sock.settimeout(10)
-time.sleep(0.5)
 
 print("\rConnecting to TCP socket...                      ", end="")
 
 server_client_sock.connect((TCP_HOST, TCP_PORT))
-time.sleep(0.5)
 
 print("\rNotifying serial client he is connected to the bridge...                      ", end="")
-time.sleep(0.5)
 
 serial_connection.write("bridgeConnected\0".encode())
 print("\rClient got notified he was connected to the bridge!                      ", end="")
@@ -125,29 +127,31 @@ try:
 
     while True:
         try:
-            # Read data from the USB device
             data = serial_connection.read(serial_connection.in_waiting)
 
-            # Print the data if it isn't empty
             if data.decode() != "":
                 decoded_data = data.decode()
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
-                print(f'Recieved serial decoded data: {decoded_data}')
+                print(f'recieved serial: {decoded_data}')
 
-                # Send and wait for response from socket
-                server_client_sock.send(decoded_data.encode())
-                response = server_client_sock.recv(1024)
-                decoded_response = response.decode()
+                packet_value = None
+                for packet in packets_dictionary:
+                    if data.startswith(packet.to_bytes(1, byteorder='big')):
+                        packet_value = packet
+                        break
+                
+                if packet_value is not None:
+                    data = data[1:]
+                    data = packets_dictionary[packet_value] + data
 
-                if DEBUG == True: print(f'Recieved socket encoded data: {data}')
-                print(f'Recieved socket decoded data: {decoded_data}')
+                server_client_sock.send(data.decode().encode())
+                server_response = server_client_sock.recv(4096)
+                decoded_server_response = server_response.decode()
 
-                # If the response is OK, send "internetConnected" to the serial device
-                if decoded_response == "OK":
-                    serial_connection.write("internetConnected\0".encode())
-                    print("Sent 'internetConnected' to serial device")
-                else:
-                    print(decoded_response)
+                if DEBUG == True: print(f'Recieved server encoded data: {server_response}')
+                print(f'recieved server: {decoded_server_response}')
+
+                serial_connection.write(server_response.decode().encode())
 
         except (serial.SerialException, OSError, IOError) as e:
             print('\nSerial device appears disabled. Disconnecting from remote host')
@@ -157,6 +161,7 @@ try:
                 server_client_sock.close()
                 sys.exit(1)
             except NameError: pass
+
 
 except KeyboardInterrupt:
     CleanExit(serial_connection=serial_connection, server_client_sock=server_client_sock, reason="\nRecieved CTRL+C! Exiting cleanly...")
