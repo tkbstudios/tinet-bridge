@@ -55,9 +55,13 @@ def client_handler(client_socket, address):
                 time_response = requests.get("https://timeapi.io/api/Time/Current/zone?timeZone=Europe/Brussels")
                 time_data = json.loads(time_response.text)
                 sockresponse = f"currentTime:{str(time_data['time'])}"
-
-            elif data != "":
-                sockresponse = 'Invalid request'
+            
+            # USER DATA HANDLER
+            elif data.startsWith("USERNAME:"):
+                sockresponse = "sendToken"
+            
+            elif data.startsWith("USERTOKEN:"):
+                sockresponse = "loggedIn"
 
             client_socket.send(sockresponse.encode())
     except socket.timeout or socket.error as e:
