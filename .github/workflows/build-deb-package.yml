@@ -1,0 +1,23 @@
+name: Build Debian Package
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build-debian-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install -y build-essential dpkg-dev devscripts debhelper
+
+      - name: Build Debian package
+        run: |
+          mkdir -p debian
+          # Create the necessary files in the debian directory (control, changelog, compat, rules)
+          # ...
+          dpkg-buildpackage -b

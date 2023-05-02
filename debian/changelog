@@ -1,0 +1,5 @@
+tinetbridge (0.0.1-1) stretch; urgency=medium
+
+  * Initial packaging work with dpkg-buildpackage.
+
+ -- TKB Studios <owner@tkbstudios.tk>  Tue, 02 May 2023 20:18:24 +0200

@@ -1,0 +1,10 @@
+Source: tinetbridge
+Section: optional
+Priority: optional
+Maintainer: TKB Studios <owner@tkbstudios.tk>
+Build-Depends: debhelper (>= 9)
+
+Package: tinetbridge
+Architecture: all
+Depends: python
+Description: TI-84 Plus CE Net bridge
