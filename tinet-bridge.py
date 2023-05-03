@@ -22,6 +22,8 @@ PING_SERVER = False # [DOES NOT WORK!!] Enable or disable server ping, disable t
 PING_INTERVAL = 3 # Time between every server ping. default: 3
 EXIT_IF_PING_IS_ZERO = True # If the ping is 0, then disconnect the serial device and clean exit the bridge. default: True
 
+RETRY_DEFAULT_PORT_FOREVER = True # Retry the default rpi0W2 port (/dev/ttyACM0) forever if it fails. default: True
+
 #-END BRIDGE CONFIG-#
 
 
@@ -110,8 +112,12 @@ def select_serial_port(ports):
 print("\rIniting serial...\n")
 
 try:
-    print("Trying default netbridge port...")
-    serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
+    # deepcode ignore PythonSameEvalBinaryExpressiontrue: This is a config made by the user
+    if RETRY_DEFAULT_PORT_FOREVER == True:
+        while True:
+            print("Trying default netbridge port...")
+            serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
+            if serial_connection.is_open == True: break
 
 except serial.SerialException:
     try:
