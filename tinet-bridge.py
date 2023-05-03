@@ -25,12 +25,14 @@ EXIT_IF_PING_IS_ZERO = True # If the ping is 0, then disconnect the serial devic
 #-END BRIDGE CONFIG-#
 
 
+# DO NOT TOUCH THIS CONF
 packets_dictionary = {
     0x00: "USERNAME:",
     0x01: "USERTOKEN:"
 }
+# STOP CONF
 
-
+serial_connection = serial.Serial()
 
 def checkForUpdate():
     print("Checking for updates...")
@@ -89,8 +91,6 @@ def server_ping(server_client_sock, serial_connection):
         time.sleep(PING_INTERVAL)
 
 
-print("\rIniting serial...\n")
-
 def list_serial_ports():
     ports = list_ports.comports()
     for i, port in enumerate(ports):
@@ -105,12 +105,24 @@ def select_serial_port(ports):
         print("Invalid selection. Please try again.")
         return select_serial_port(ports)
 
-available_ports = list_serial_ports()
-selected_port_info = select_serial_port(available_ports)
 
-# Initialize the connection with the selected device
-serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=1)
-print(f"Connected to: {serial_connection.portstr}")
+
+print("\rIniting serial...\n")
+
+try:
+    print("Trying default netbridge port...")
+    serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
+
+except serial.SerialException:
+    try:
+        print("DEFAULT PORT FAILED!")
+        available_ports = list_serial_ports()
+        selected_port_info = select_serial_port(available_ports)
+        serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=1)
+        print(f"Connected to: {serial_connection.portstr}")
+    except serial.SerialException:
+        print("FAILED CONNECTION!")
+        print("Are you sure your calculator is in TINET program\nwith a valid key and connected to USB?")
 
 print("\rCreating TCP socket...                      ", end="")
 
