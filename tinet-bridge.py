@@ -144,6 +144,8 @@ print("\rNotifying serial client he is connected to the bridge...               
 serial_connection.write("bridgeConnected\0".encode())
 print("\rClient got notified he was connected to the bridge!                      ", end="")
 
+time.sleep(1) # Add delay to prevent the client to not see the SERIAL_CONNECTED_CONFIRMED message
+
 print("\rReading data from serial device...                      ")
 try:
     # Windows doesn't allow connection even when allowed through private and public networks firewall
