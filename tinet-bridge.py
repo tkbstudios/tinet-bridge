@@ -1,4 +1,5 @@
 import serial
+from serial.tools import list_ports
 import socket
 import sys
 import time
@@ -20,8 +21,6 @@ DEBUG = True # ENABLE DEBUG MODE, Shows more information in console, useful if s
 PING_SERVER = False # [DOES NOT WORK!!] Enable or disable server ping, disable to get a more clean console. default: True
 PING_INTERVAL = 3 # Time between every server ping. default: 3
 EXIT_IF_PING_IS_ZERO = True # If the ping is 0, then disconnect the serial device and clean exit the bridge. default: True
-
-PREDEFINED_COM_PORT = "COM5" # Leave empty to choose which COM port to use at bridge start. default: ""
 
 #-END BRIDGE CONFIG-#
 
@@ -52,12 +51,6 @@ def checkForUpdate():
 
 
 checkForUpdate()
-
-# Define the USB device port
-if PREDEFINED_COM_PORT == "":
-    USB_PORT = input("Please enter COM port (COM1, COM2, etc..): ")
-else:
-    USB_PORT = PREDEFINED_COM_PORT
 
 connected = False
 
@@ -96,9 +89,28 @@ def server_ping(server_client_sock, serial_connection):
         time.sleep(PING_INTERVAL)
 
 
-print("\rIniting serial...", end="")
+print("\rIniting serial...\n")
 
-serial_connection = serial.Serial(USB_PORT, baudrate=9600, timeout=1)
+def list_serial_ports():
+    ports = list_ports.comports()
+    for i, port in enumerate(ports):
+        print(f"{i + 1}. {port.device} - {port.description}")
+    return ports
+
+def select_serial_port(ports):
+    selected_index = int(input("Enter the number of the serial device you want to select: ")) - 1
+    if 0 <= selected_index < len(ports):
+        return ports[selected_index]
+    else:
+        print("Invalid selection. Please try again.")
+        return select_serial_port(ports)
+
+available_ports = list_serial_ports()
+selected_port_info = select_serial_port(available_ports)
+
+# Initialize the connection with the selected device
+serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=1)
+print(f"Connected to: {serial_connection.portstr}")
 
 print("\rCreating TCP socket...                      ", end="")
 
