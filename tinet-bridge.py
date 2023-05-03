@@ -57,6 +57,7 @@ def checkForUpdate():
 
 def directUpdate():
     print("Pulling latest files...")
+    os.system("git config pull.ff only")
     os.system("git pull")
 
 #checkForUpdate()
