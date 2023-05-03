@@ -116,7 +116,7 @@ try:
     if RETRY_DEFAULT_PORT_FOREVER == True:
         while True:
             print("Trying default netbridge port...")
-            serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=1)
+            serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=3)
             if serial_connection.is_open == True: break
 
 except serial.SerialException:
@@ -124,7 +124,7 @@ except serial.SerialException:
         print("DEFAULT PORT FAILED!")
         available_ports = list_serial_ports()
         selected_port_info = select_serial_port(available_ports)
-        serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=1)
+        serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=3)
         print(f"Connected to: {serial_connection.portstr}")
     except serial.SerialException:
         print("FAILED CONNECTION!")
