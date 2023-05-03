@@ -6,6 +6,7 @@ import time
 import urllib.request
 import threading
 import math
+import os
 
 
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
@@ -54,7 +55,12 @@ def checkForUpdate():
         print("Current version is up to date")
 
 
-checkForUpdate()
+def directUpdate():
+    print("Pulling latest files...")
+    os.system("git pull")
+
+#checkForUpdate()
+directUpdate()
 
 connected = False
 
