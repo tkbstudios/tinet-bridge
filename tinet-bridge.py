@@ -68,12 +68,13 @@ connected = False
 
 def CleanExit(serial_connection, server_client_sock, reason):
     print(str(reason))
-    print("Notifying client bridge got disconnected!                      ", end="")
+    print("Notifying client bridge got disconnected!                      ")
     serial_connection.write("bridgeDisconnected".encode())
     serial_connection.write("internetDisconnected".encode())
-    print("\rNotified client bridge got disconnected!                      ", end="")
+    print("Notified client bridge got disconnected!                      ")
     serial_connection.close()
     server_client_sock.close()
+    sys.exit(0)
 
 
 def server_ping(server_client_sock, serial_connection):
