@@ -14,8 +14,8 @@ CURRENT_VERSION = "0.0.1"
 
 #---BRIDGE CONFIG---#
 
-TCP_HOST = 'our-excellent.at.ply.gg' # Server address. default: ti84pluscenethub.tkbstudios.tk
-TCP_PORT = 25199 # Server port. default: 50252 for default address
+TCP_HOST = 'individual-builders.at.ply.gg' # TCP Server address. default: ti84pluscenethub.tkbstudios.tk
+TCP_PORT = 50252 # Server port. default: 50252 for default address
 
 DEBUG = True # ENABLE DEBUG MODE, Shows more information in console, useful if staff asks for console log. default: True
 
