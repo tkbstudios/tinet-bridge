@@ -1,10 +1,12 @@
 import serial
+from serial.tools import list_ports
 import socket
 import sys
 import time
 import urllib.request
 import threading
 import math
+import os
 
 
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
@@ -12,8 +14,8 @@ CURRENT_VERSION = "0.0.1"
 
 #---BRIDGE CONFIG---#
 
-TCP_HOST = 'our-excellent.at.ply.gg' # Server address. default: ti84pluscenethub.tkbstudios.tk
-TCP_PORT = 25199 # Server port. default: 50252 for default address
+TCP_HOST = 'individual-builders.at.ply.gg' # TCP Server address. default: ti84pluscenethub.tkbstudios.tk
+TCP_PORT = 50252 # Server port. default: 50252 for default address
 
 DEBUG = True # ENABLE DEBUG MODE, Shows more information in console, useful if staff asks for console log. default: True
 
@@ -21,9 +23,19 @@ PING_SERVER = False # [DOES NOT WORK!!] Enable or disable server ping, disable t
 PING_INTERVAL = 3 # Time between every server ping. default: 3
 EXIT_IF_PING_IS_ZERO = True # If the ping is 0, then disconnect the serial device and clean exit the bridge. default: True
 
-PREDEFINED_COM_PORT = "COM5" # Leave empty to choose which COM port to use at bridge start. default: ""
+RETRY_DEFAULT_PORT_FOREVER = True # Retry the default rpi0W2 port (/dev/ttyACM0) forever if it fails. default: True
 
 #-END BRIDGE CONFIG-#
+
+
+# DO NOT TOUCH THIS CONF
+packets_dictionary = {
+    0x00: "USERNAME:",
+    0x01: "USERTOKEN:"
+}
+# STOP CONF
+
+serial_connection = serial.Serial()
 
 def checkForUpdate():
     print("Checking for updates...")
@@ -34,7 +46,6 @@ def checkForUpdate():
         print("Error: ", str(e.reason))
         sys.exit(1)
 
-    # Compare the versions
     if latest_version != CURRENT_VERSION:
         print("New version available! Please update!")
         print("https://github.com/tkbstudios/ti84pluscenet-bridge/blob/main/tinet-bridge.py")
@@ -44,13 +55,13 @@ def checkForUpdate():
         print("Current version is up to date")
 
 
-checkForUpdate()
+def directUpdate():
+    print("Pulling latest files...")
+    os.system("git config pull.ff only")
+    os.system("git pull")
 
-# Define the USB device port
-if PREDEFINED_COM_PORT == "":
-    USB_PORT = input("Please enter COM port (COM1, COM2, etc..): ")
-else:
-    USB_PORT = PREDEFINED_COM_PORT
+#checkForUpdate()
+directUpdate()
 
 connected = False
 
@@ -60,7 +71,6 @@ def CleanExit(serial_connection, server_client_sock, reason):
     print("Notifying client bridge got disconnected!                      ", end="")
     serial_connection.write("bridgeDisconnected".encode())
     serial_connection.write("internetDisconnected".encode())
-    time.sleep(0.5)
     print("\rNotified client bridge got disconnected!                      ", end="")
     serial_connection.close()
     server_client_sock.close()
@@ -90,27 +100,58 @@ def server_ping(server_client_sock, serial_connection):
         time.sleep(PING_INTERVAL)
 
 
-print("\rIniting serial...", end="")
+def list_serial_ports():
+    ports = list_ports.comports()
+    for i, port in enumerate(ports):
+        print(f"{i + 1}. {port.device} - {port.description}")
+    return ports
 
-serial_connection = serial.Serial(USB_PORT, baudrate=9600, timeout=1)
-time.sleep(0.5)
+def select_serial_port(ports):
+    selected_index = int(input("Enter the number of the serial device you want to select: ")) - 1
+    if 0 <= selected_index < len(ports):
+        return ports[selected_index]
+    else:
+        print("Invalid selection. Please try again.")
+        return select_serial_port(ports)
+
+
+
+print("\rIniting serial...\n")
+
+try:
+    # deepcode ignore PythonSameEvalBinaryExpressiontrue: This is a config made by the user
+    if RETRY_DEFAULT_PORT_FOREVER == True:
+        while True:
+            print("Trying default netbridge port...")
+            serial_connection = serial.Serial("/dev/ttyACM0", baudrate=9600, timeout=3)
+            if serial_connection.is_open == True: break
+
+except serial.SerialException:
+    try:
+        print("DEFAULT PORT FAILED!")
+        available_ports = list_serial_ports()
+        selected_port_info = select_serial_port(available_ports)
+        serial_connection = serial.Serial(selected_port_info.device, baudrate=9600, timeout=3)
+        print(f"Connected to: {serial_connection.portstr}")
+    except serial.SerialException:
+        print("FAILED CONNECTION!")
+        print("Are you sure your calculator is in TINET program\nwith a valid key and connected to USB?")
 
 print("\rCreating TCP socket...                      ", end="")
 
 server_client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_client_sock.settimeout(10)
-time.sleep(0.5)
 
 print("\rConnecting to TCP socket...                      ", end="")
 
 server_client_sock.connect((TCP_HOST, TCP_PORT))
-time.sleep(0.5)
 
 print("\rNotifying serial client he is connected to the bridge...                      ", end="")
-time.sleep(0.5)
 
 serial_connection.write("bridgeConnected\0".encode())
 print("\rClient got notified he was connected to the bridge!                      ", end="")
+
+time.sleep(1) # Add delay to prevent the client to not see the SERIAL_CONNECTED_CONFIRMED message
 
 print("\rReading data from serial device...                      ")
 try:
@@ -125,29 +166,31 @@ try:
 
     while True:
         try:
-            # Read data from the USB device
             data = serial_connection.read(serial_connection.in_waiting)
 
-            # Print the data if it isn't empty
             if data.decode() != "":
                 decoded_data = data.decode()
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
-                print(f'Recieved serial decoded data: {decoded_data}')
+                print(f'recieved serial: {decoded_data}')
 
-                # Send and wait for response from socket
-                server_client_sock.send(decoded_data.encode())
-                response = server_client_sock.recv(1024)
-                decoded_response = response.decode()
+                packet_value = None
+                for packet in packets_dictionary:
+                    if data.startswith(packet.to_bytes(1, byteorder='big')):
+                        packet_value = packet
+                        break
+                
+                if packet_value is not None:
+                    data = data[1:]
+                    data = packets_dictionary[packet_value] + data
 
-                if DEBUG == True: print(f'Recieved socket encoded data: {data}')
-                print(f'Recieved socket decoded data: {decoded_data}')
+                server_client_sock.send(data.decode().encode())
+                server_response = server_client_sock.recv(4096)
+                decoded_server_response = server_response.decode()
 
-                # If the response is OK, send "internetConnected" to the serial device
-                if decoded_response == "OK":
-                    serial_connection.write("internetConnected\0".encode())
-                    print("Sent 'internetConnected' to serial device")
-                else:
-                    print(decoded_response)
+                if DEBUG == True: print(f'Recieved server encoded data: {server_response}')
+                print(f'recieved server: {decoded_server_response}')
+
+                serial_connection.write(server_response.decode().encode())
 
         except (serial.SerialException, OSError, IOError) as e:
             print('\nSerial device appears disabled. Disconnecting from remote host')
@@ -157,6 +200,7 @@ try:
                 server_client_sock.close()
                 sys.exit(1)
             except NameError: pass
+
 
 except KeyboardInterrupt:
     CleanExit(serial_connection=serial_connection, server_client_sock=server_client_sock, reason="\nRecieved CTRL+C! Exiting cleanly...")
