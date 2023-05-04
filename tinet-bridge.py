@@ -173,16 +173,6 @@ try:
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
                 print(f'recieved serial: {decoded_data}')
 
-                packet_value = None
-                for packet in packets_dictionary:
-                    if data.startswith(packet.to_bytes(1, byteorder='big')):
-                        packet_value = packet
-                        break
-                
-                if packet_value is not None:
-                    data = data[1:]
-                    data = packets_dictionary[packet_value] + data
-
                 server_client_sock.send(data.decode().encode())
                 server_response = server_client_sock.recv(4096)
                 decoded_server_response = server_response.decode()
