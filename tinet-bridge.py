@@ -110,7 +110,10 @@ def serial_read(serial_connection, server_client_sock):
 
 def server_read(serial_connection, server_client_sock):
     while True:
-        server_response = server_client_sock.recv(4096)
+        try:
+            server_response = server_client_sock.recv(4096)
+        except socket.timeout:
+            return
         decoded_server_response = server_response.decode()
 
         if DEBUG: print(f'Received server encoded data: {server_response}')
