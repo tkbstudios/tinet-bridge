@@ -103,10 +103,11 @@ def serial_read(serial_connection, server_client_sock):
         data = serial_connection.read(serial_connection.in_waiting)
         if data.decode() != "":
             decoded_data = data.decode().replace("/0", "")
-            if DEBUG: print(f'Received serial encoded data: {data}')
-            print(f'Received serial: {decoded_data}')
+            if DEBUG: print(f'R - serial - ED: {data}')
+            print(f'R - serial: {decoded_data}')
 
             server_client_sock.send(decoded_data.encode())
+            print(f'W - server: {decoded_data}')
 
 def server_read(serial_connection, server_client_sock):
     while True:
@@ -116,10 +117,11 @@ def server_read(serial_connection, server_client_sock):
             return
         decoded_server_response = server_response.decode()
 
-        if DEBUG: print(f'Received server encoded data: {server_response}')
-        print(f'Received server: {decoded_server_response}')
+        if DEBUG: print(f'R - server - ED: {server_response}')
+        print(f'R - server: {decoded_server_response}')
 
-        serial_connection.write(server_response.decode().encode())
+        serial_connection.write(decoded_server_response.encode())
+        print(f'W - serial: {decoded_server_response}')
 
 
 def list_serial_ports():
