@@ -7,14 +7,6 @@ import urllib.request
 import threading
 import math
 import os
-import logging
-import math
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logging.basicConfig(filename=f"{str(math.floor(time.time()))}.log", filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-
-
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
 CURRENT_VERSION = "0.0.1"
 
@@ -106,6 +98,26 @@ def server_ping(server_client_sock, serial_connection):
 
         time.sleep(PING_INTERVAL)
 
+def serial_read(serial_connection, server_client_sock):
+    while True:
+        data = serial_connection.read(serial_connection.in_waiting)
+        if data.decode() != "":
+            decoded_data = data.decode().replace("/0", "")
+            if DEBUG: print(f'Received serial encoded data: {data}')
+            print(f'Received serial: {decoded_data}')
+
+            server_client_sock.send(decoded_data.encode())
+
+def server_read(serial_connection, server_client_sock):
+    while True:
+        server_response = server_client_sock.recv(4096)
+        decoded_server_response = server_response.decode()
+
+        if DEBUG: print(f'Received server encoded data: {server_response}')
+        print(f'Received server: {decoded_server_response}')
+
+        serial_connection.write(server_response.decode().encode())
+
 
 def list_serial_ports():
     ports = list_ports.comports()
@@ -171,35 +183,12 @@ try:
         ping_server_thread.daemon = True
         ping_server_thread.start()
 
-    while True:
-        try:
-            data = serial_connection.read(serial_connection.in_waiting)
-
-            if data.decode() != "":
-                decoded_data = data.decode().replace("/0", "")
-                logger.info(decoded_data)
-                if DEBUG == True: print(f'Recieved serial encoded data: {data}')
-                print(f'recieved serial: {decoded_data}')
-
-                server_client_sock.send(decoded_data.encode())
-                server_response = server_client_sock.recv(4096)
-                decoded_server_response = server_response.decode()
-
-                if DEBUG == True: print(f'Recieved server encoded data: {server_response}')
-                print(f'recieved server: {decoded_server_response}')
-                logger.info(decoded_server_response)
-
-                serial_connection.write(server_response.decode().encode())
-
-        except (serial.SerialException, OSError, IOError) as e:
-            print('\nSerial device appears disabled. Disconnecting from remote host')
-            if DEBUG == True: print(f"Full error: {str(e)}")
-            connected = False
-            try:
-                server_client_sock.close()
-                sys.exit(1)
-            except NameError: pass
-
+    serial_read_thread = threading.Thread(target=serial_read, args=(serial_connection, server_client_sock))
+    serial_read_thread.name = "SERIAL_READ_THREAD"
+    serial_read_thread.start()
+    server_read_thread = threading.Thread(target=server_read, args=(serial_connection, server_client_sock))
+    server_read_thread.name = "SERVER_READ_THREAD"
+    server_read_thread.start()
 
 except KeyboardInterrupt:
     CleanExit(serial_connection=serial_connection, server_client_sock=server_client_sock, reason="\nRecieved CTRL+C! Exiting cleanly...")
