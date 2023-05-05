@@ -170,7 +170,7 @@ try:
             data = serial_connection.read(serial_connection.in_waiting)
 
             if data.decode() != "":
-                decoded_data = data.decode()
+                decoded_data = data.decode().replace("/0", "")
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
                 print(f'recieved serial: {decoded_data}')
 
