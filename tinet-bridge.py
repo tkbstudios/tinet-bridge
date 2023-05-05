@@ -99,14 +99,16 @@ def server_ping(server_client_sock, serial_connection):
         time.sleep(PING_INTERVAL)
 
 def serial_read(serial_connection, server_client_sock):
+    data = bytes()
     while True:
         try:
             data = serial_connection.read(serial_connection.in_waiting)
-        except serial.SerialException as e:
-            print("ERROR WITH SERIAL!!")
+        except IOError:
+            print("Device disconnected!!")
+        except Exception as e:
             print(str(e))
-            
             sys.exit(1)
+        
         if data.decode() != "":
             decoded_data = data.decode().replace("/0", "")
             if DEBUG: print(f'R - serial - ED: {data}')
