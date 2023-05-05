@@ -8,9 +8,11 @@ import threading
 import math
 import os
 import logging
+import math
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+logging.basicConfig(filename=f"{str(math.floor(time.time()))}.log", filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
 
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
@@ -175,6 +177,7 @@ try:
 
             if data.decode() != "":
                 decoded_data = data.decode().replace("/0", "")
+                logger.info(decoded_data)
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
                 print(f'recieved serial: {decoded_data}')
 
@@ -184,6 +187,7 @@ try:
 
                 if DEBUG == True: print(f'Recieved server encoded data: {server_response}')
                 print(f'recieved server: {decoded_server_response}')
+                logger.info(decoded_server_response)
 
                 serial_connection.write(server_response.decode().encode())
 
