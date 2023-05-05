@@ -105,6 +105,7 @@ def serial_read(serial_connection, server_client_sock):
             data = serial_connection.read(serial_connection.in_waiting)
         except OSError:
             print("Device disconnected!!")
+            sys.exit(1)
         except Exception as e:
             print(str(e))
             sys.exit(1)
