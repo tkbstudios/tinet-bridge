@@ -103,7 +103,7 @@ def serial_read(serial_connection, server_client_sock):
     while True:
         try:
             data = serial_connection.read(serial_connection.in_waiting)
-        except IOError:
+        except OSError:
             print("Device disconnected!!")
         except Exception as e:
             print(str(e))
