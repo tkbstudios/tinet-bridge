@@ -1,3 +1,4 @@
 [ ] Create a UI for users who want a UI
 [ ] Fix the bridge not working on windows (Windows blocks TCP connection)
 [x] Bridge working flawlessly
+[ ] make bridge listen in a loop and not if serial sends something

@@ -7,6 +7,10 @@ import urllib.request
 import threading
 import math
 import os
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
@@ -174,7 +178,7 @@ try:
                 if DEBUG == True: print(f'Recieved serial encoded data: {data}')
                 print(f'recieved serial: {decoded_data}')
 
-                server_client_sock.send(data.decode().encode())
+                server_client_sock.send(decoded_data.encode())
                 server_response = server_client_sock.recv(4096)
                 decoded_server_response = server_response.decode()
 
