@@ -131,9 +131,6 @@ def server_read(serial_connection, server_client_sock):
             print("Server read exception!")
             break
         decoded_server_response = server_response.decode()
-        if decoded_server_response == "":
-            print("Recieved empty data from server")
-            break
 
         if DEBUG: print(f'R - server - ED: {server_response}')
         print(f'R - server: {decoded_server_response}')
