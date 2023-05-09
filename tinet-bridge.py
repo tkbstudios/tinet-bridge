@@ -126,7 +126,7 @@ def server_read(serial_connection, server_client_sock):
         try:
             server_response = server_client_sock.recv(4096)
         except socket.timeout:
-            break
+            continue
         except Exception:
             print("Server read exception!")
             break
