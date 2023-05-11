@@ -7,8 +7,6 @@ import urllib.request
 import threading
 import math
 import os
-
-
 LATEST_VERSION_URL = "https://raw.githubusercontent.com/tkbstudios/ti84pluscenet-bridge/main/version.txt"
 CURRENT_VERSION = "0.0.1"
 
@@ -68,12 +66,13 @@ connected = False
 
 def CleanExit(serial_connection, server_client_sock, reason):
     print(str(reason))
-    print("Notifying client bridge got disconnected!                      ", end="")
+    print("Notifying client bridge got disconnected!                      ")
     serial_connection.write("bridgeDisconnected".encode())
     serial_connection.write("internetDisconnected".encode())
-    print("\rNotified client bridge got disconnected!                      ", end="")
+    print("Notified client bridge got disconnected!                      ")
     serial_connection.close()
     server_client_sock.close()
+    sys.exit(0)
 
 
 def server_ping(server_client_sock, serial_connection):
@@ -98,6 +97,48 @@ def server_ping(server_client_sock, serial_connection):
                 break
 
         time.sleep(PING_INTERVAL)
+
+def serial_read(serial_connection, server_client_sock):
+    data = bytes()
+    while True:
+        try:
+            data = serial_connection.read(serial_connection.in_waiting)
+        except OSError:
+            print("Device disconnected!!")
+            break
+        except Exception as e:
+            print(str(e))
+            sys.exit(1)
+        
+        if data.decode() != "":
+            decoded_data = data.decode().replace("/0", "")
+            if DEBUG: print(f'R - serial - ED: {data}')
+            print(f'R - serial: {decoded_data}')
+
+            server_client_sock.send(decoded_data.encode())
+            print(f'W - server: {decoded_data}')
+    print("Serial read stopped!")
+    return
+
+
+def server_read(serial_connection, server_client_sock):
+    while True:
+        try:
+            server_response = server_client_sock.recv(4096)
+        except socket.timeout:
+            continue
+        except Exception:
+            print("Server read exception!")
+            break
+        decoded_server_response = server_response.decode()
+
+        if DEBUG: print(f'R - server - ED: {server_response}')
+        print(f'R - server: {decoded_server_response}')
+
+        serial_connection.write(decoded_server_response.encode())
+        print(f'W - serial: {decoded_server_response}')
+    print("Server read stopped!")
+    return
 
 
 def list_serial_ports():
@@ -164,43 +205,12 @@ try:
         ping_server_thread.daemon = True
         ping_server_thread.start()
 
-    while True:
-        try:
-            data = serial_connection.read(serial_connection.in_waiting)
-
-            if data.decode() != "":
-                decoded_data = data.decode()
-                if DEBUG == True: print(f'Recieved serial encoded data: {data}')
-                print(f'recieved serial: {decoded_data}')
-
-                packet_value = None
-                for packet in packets_dictionary:
-                    if data.startswith(packet.to_bytes(1, byteorder='big')):
-                        packet_value = packet
-                        break
-                
-                if packet_value is not None:
-                    data = data[1:]
-                    data = packets_dictionary[packet_value] + data
-
-                server_client_sock.send(data.decode().encode())
-                server_response = server_client_sock.recv(4096)
-                decoded_server_response = server_response.decode()
-
-                if DEBUG == True: print(f'Recieved server encoded data: {server_response}')
-                print(f'recieved server: {decoded_server_response}')
-
-                serial_connection.write(server_response.decode().encode())
-
-        except (serial.SerialException, OSError, IOError) as e:
-            print('\nSerial device appears disabled. Disconnecting from remote host')
-            if DEBUG == True: print(f"Full error: {str(e)}")
-            connected = False
-            try:
-                server_client_sock.close()
-                sys.exit(1)
-            except NameError: pass
-
+    serial_read_thread = threading.Thread(target=serial_read, args=(serial_connection, server_client_sock))
+    serial_read_thread.name = "SERIAL_READ_THREAD"
+    serial_read_thread.start()
+    server_read_thread = threading.Thread(target=server_read, args=(serial_connection, server_client_sock))
+    server_read_thread.name = "SERVER_READ_THREAD"
+    server_read_thread.start()
 
 except KeyboardInterrupt:
     CleanExit(serial_connection=serial_connection, server_client_sock=server_client_sock, reason="\nRecieved CTRL+C! Exiting cleanly...")
