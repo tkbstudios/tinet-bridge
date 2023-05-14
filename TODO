@@ -1,5 +1,5 @@
-[ ] Create a UI for users who want a UI
-[ ] Fix the bridge not working on windows (Windows blocks TCP connection)
-[x] Bridge working flawlessly
 [x] make bridge listen in a loop and not if serial sends something
-[x] Exit if recieved server data is empty
+[ ] Exit if disconnected (idk if it's done we'll see)
+[x] Bridge working flawlessly
+[ ] Fix the bridge not working on windows (Windows blocks TCP connection)
+[ ] Create a UI for users who want a UI (Will do as last when everything works)
