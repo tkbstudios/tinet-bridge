@@ -10,8 +10,8 @@ import os
 
 #---BRIDGE CONFIG---#
 
-TCP_HOST = 'tinethub.tkbstudios.tk' # TCP Server address. default: tinethub.tkbstudios.tk
-TCP_PORT = 5879 # Server port. default: 5879 for default address
+TCP_HOST = 'individual-builders.at.ply.gg' # TCP Server address. default: tinethub.tkbstudios.tk
+TCP_PORT = 50252 # Server port. default: 50252 for default address
 
 DEBUG = True # ENABLE DEBUG MODE, Shows more information in console, useful if staff asks for console log. default: True
 
