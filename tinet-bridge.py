@@ -86,7 +86,7 @@ def serial_read(serial_connection, server_client_sock):
             server_client_sock.send(decoded_data.encode())
             print(f'W - server: {decoded_data}')
     print("Serial read stopped!")
-    return
+    sys.exit(0)
 
 
 def server_read(serial_connection, server_client_sock):
@@ -106,7 +106,7 @@ def server_read(serial_connection, server_client_sock):
         serial_connection.write(decoded_server_response.encode())
         print(f'W - serial: {decoded_server_response}')
     print("Server read stopped!")
-    return
+    sys.exit(0)
 
 
 def list_serial_ports():
