@@ -145,6 +145,7 @@ except serial.SerialException:
     except serial.SerialException:
         print("FAILED CONNECTION!")
         print("Are you sure your calculator is in TINET program\nwith a valid key and connected to USB?")
+        sys.exit(1)
 
 print("\rCreating TCP socket...                      ", end="")
 
