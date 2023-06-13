@@ -21,6 +21,8 @@ EXIT_IF_PING_IS_ZERO = True # If the ping is 0, then disconnect the serial devic
 
 RETRY_DEFAULT_PORT_FOREVER = True # Retry the default rpi0W2 port (/dev/ttyACM0) forever if it fails. default: True
 
+EXIT_SCRIPT = False
+
 #-END BRIDGE CONFIG-#
 def updateBridge():
     print("Pulling latest files...")
@@ -73,10 +75,9 @@ def serial_read(serial_connection, server_client_sock):
             data = serial_connection.read(serial_connection.in_waiting)
         except OSError:
             print("Device disconnected!!")
-            sys.exit(0)
+            CleanExit(serial_connection, server_client_sock, "Device disconnected!!")
         except Exception as e:
-            print(str(e))
-            sys.exit(1)
+            CleanExit(serial_connection, server_client_sock, str(e))
         
         if data.decode() != "":
             decoded_data = data.decode().replace("/0", "")
@@ -85,8 +86,6 @@ def serial_read(serial_connection, server_client_sock):
 
             server_client_sock.send(decoded_data.encode())
             print(f'W - server: {decoded_data}')
-    print("Serial read stopped!")
-    sys.exit(0)
 
 
 def server_read(serial_connection, server_client_sock):
@@ -98,13 +97,10 @@ def server_read(serial_connection, server_client_sock):
             print("Socket timeout!")
             sock_timeouts += 1
             if sock_timeouts >= 3:
-                print("3 or more server socket timeouts happened this session!")
-                print("Exiting the script.")
-                sys.exit(1)
+                CleanExit(serial_connection, server_client_sock, "3 or more server socket timeouts happened this session!")
             continue
         except Exception:
-            print("Server read exception!")
-            sys.exit(0)
+            CleanExit(serial_connection, server_client_sock, "Server read exception!")
         decoded_server_response = server_response.decode()
 
         if DEBUG: print(f'R - server - ED: {server_response}')
