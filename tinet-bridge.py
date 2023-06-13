@@ -89,15 +89,10 @@ def serial_read(serial_connection, server_client_sock):
 
 
 def server_read(serial_connection, server_client_sock):
-    sock_timeouts = 0
     while True:
         try:
             server_response = server_client_sock.recv(4096)
         except socket.timeout:
-            print("Socket timeout!")
-            sock_timeouts += 1
-            if sock_timeouts >= 3:
-                CleanExit(serial_connection, server_client_sock, "3 or more server socket timeouts happened this session!")
             continue
         except Exception:
             CleanExit(serial_connection, server_client_sock, "Server read exception!")
