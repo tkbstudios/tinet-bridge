@@ -73,7 +73,7 @@ def serial_read(serial_connection, server_client_sock):
             data = serial_connection.read(serial_connection.in_waiting)
         except OSError:
             print("Device disconnected!!")
-            break
+            sys.exit(0)
         except Exception as e:
             print(str(e))
             sys.exit(1)
@@ -90,14 +90,21 @@ def serial_read(serial_connection, server_client_sock):
 
 
 def server_read(serial_connection, server_client_sock):
+    sock_timeouts = 0
     while True:
         try:
             server_response = server_client_sock.recv(4096)
         except socket.timeout:
+            print("Socket timeout!")
+            sock_timeouts += 1
+            if sock_timeouts >= 3:
+                print("3 or more server socket timeouts happened this session!")
+                print("Exiting the script.")
+                sys.exit(1)
             continue
         except Exception:
             print("Server read exception!")
-            break
+            sys.exit(0)
         decoded_server_response = server_response.decode()
 
         if DEBUG: print(f'R - server - ED: {server_response}')
@@ -105,8 +112,6 @@ def server_read(serial_connection, server_client_sock):
 
         serial_connection.write(decoded_server_response.encode())
         print(f'W - serial: {decoded_server_response}')
-    print("Server read stopped!")
-    sys.exit(0)
 
 
 def list_serial_ports():
