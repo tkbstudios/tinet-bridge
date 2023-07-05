@@ -69,8 +69,8 @@ def server_ping(server_client_sock, serial_connection):
 '''
 
 def serial_read(serial_connection, server_client_sock):
-    data = bytes()
     while True:
+        data = bytes()
         try:
             data = serial_connection.read(serial_connection.in_waiting)
         except OSError:
@@ -80,7 +80,7 @@ def serial_read(serial_connection, server_client_sock):
             CleanExit(serial_connection, server_client_sock, str(e))
         
         if data.decode() != "":
-            decoded_data = data.decode().replace("/0", "")
+            decoded_data = data.decode().replace("/0", "").replace("\0", "")
             if DEBUG: print(f'R - serial - ED: {data}')
             print(f'R - serial: {decoded_data}')
 
